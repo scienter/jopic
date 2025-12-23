@@ -1,8 +1,10 @@
 #define DEFAULT		0
 #define ADDITION	1
 
-#define RIGHT  0
-#define LEFT   1
+#define NoDirection   0
+#define RIGHT  1
+#define LEFT   2
+#define BOTH   3
 
 #define NoLaser  0
 #define Gaussian  1

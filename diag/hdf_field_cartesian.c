@@ -19,11 +19,11 @@ void restoreFieldComp(double ***data,char *fileName,char *dataName,int nx,int ny
 void main(int argc, char *argv[])
 {
    FILE *in,*out;
-   char fileName[100],dataName[100],fileType[100],name1[100],name2[100],**name;
+   char fileName[100],dataName[100],fileType[100],name1[100],name2[100],**name,outFile[100];
    int i,j,k,n,nx,ny,nz,pick,mode,numMode,dimension,stX,stY,stZ;
    int initial,final,timeStep,step,numS,minIndex,totalStep,index;
    double pickY,*sum,rU,ex,ey,ez,bx,by,bz,x,divisionLambda,dx,dy;
-   double cosP,sinP,angle,reangle;
+   double cosP,sinP,angle,reangle,coef;
    double ***Ex,***Ey,*dataX,*dataY,*dataZ;
 
     int myrank, nTasks;
@@ -41,6 +41,7 @@ void main(int argc, char *argv[])
       printf("mode2(sum) : fileType numS spc1 spc2 ...\n");
       printf("mode3(Ey) : fileType numS spc1 spc2 ...\n");
       printf("mode4(cyl) : fileType dataName angle\n");
+      printf("mode5(Split) : outType (Ey,Ez,By,Bz)\n");
       exit(0);
    }
    mode=atoi(argv[1]);
@@ -53,6 +54,102 @@ void main(int argc, char *argv[])
    stZ=stY;
 
    switch (mode) {
+   
+   case 5 :
+     sprintf(dataName,"%s",argv[8]);
+     if(strstr(dataName,"Ey") || strstr(dataName,"Bz")) {
+        sprintf(fileName,"fieldE%d.h5",initial);
+        sprintf(name1,"Pr");
+        sprintf(name2,"Pl");
+     } else if(strstr(dataName,"Ez") || strstr(dataName,"By")) {
+        sprintf(fileName,"fieldB%d.h5",initial);
+        sprintf(name1,"Sr");
+        sprintf(name2,"Sl");
+     } else {
+        printf("outType does not matched.\n");
+        exit(0);
+     }
+     if(fopen(fileName,"r")==NULL)  {
+       printf("%s is not exited.\n",fileName);
+       exit(0);
+     } else ;
+
+     if(strstr(dataName,"Ey") || strstr(dataName,"Ez")) coef=1.0;
+     else if(strstr(dataName,"By") || strstr(dataName,"Bz")) coef=-1.0;
+    
+     saveIntMeta(fileName,"nx",&nx);
+     saveIntMeta(fileName,"ny",&ny);
+     saveIntMeta(fileName,"nz",&nz);
+
+     if(dimension==2) 
+     {       
+       Ex=(double ***)malloc(nx*sizeof(double **));      
+       Ey=(double ***)malloc(nx*sizeof(double **));      
+       for(i=0; i<nx; i++)  {
+         Ex[i]=(double **)malloc(ny*sizeof(double *));      
+         Ey[i]=(double **)malloc(ny*sizeof(double *));      
+         for(j=0; j<ny; j++)  {
+           Ex[i][j]=(double *)malloc(nz*sizeof(double ));      
+           Ey[i][j]=(double *)malloc(nz*sizeof(double ));      
+         }
+       }
+       dataX=(double *)malloc(nx*sizeof(double));      
+       dataY=(double *)malloc(ny*sizeof(double));      
+
+       for(step=initial; step<=final; step+=timeStep)
+       {
+         if(strstr(dataName,"Ey") || strstr(dataName,"Bz")) {
+           sprintf(fileName,"fieldE%d.h5",step);
+         } else if(strstr(dataName,"Ez") || strstr(dataName,"By")) {
+           sprintf(fileName,"fieldB%d.h5",step);
+         }
+         if(fopen(fileName,"r")==NULL)  {
+           printf("%s is not exited.\n",fileName);
+           exit(0);
+         } else ;
+
+         restoreFloatArray(fileName,"X",dataX,nx);
+         restoreFloatArray(fileName,"Y",dataY,ny);
+         restoreFieldComp(Ex,fileName,name1,nx,ny,nz);
+         restoreFieldComp(Ey,fileName,name2,nx,ny,nz);
+
+         for(i=0; i<nx; i++)
+           for(j=0; j<ny; j++)
+             for(k=0; k<nz; k++)
+               Ex[i][j][k]+=Ey[i][j][k]*coef;
+
+         sprintf(outFile,"field%s%d",dataName,step);
+         out=fopen(outFile,"w");
+         k=0;
+         for(i=0; i<nx; i+=stX)
+         {
+           for(j=0; j<ny; j+=stY)
+             fprintf(out,"%g %g %g\n",dataX[i],dataY[j],Ex[i][j][k]);
+           fprintf(out,"\n");
+         }
+         fclose(out);
+
+         printf("%s is made.\n",outFile);
+
+       }
+
+       for(i=0; i<nx; i++) {
+         for(j=0; j<ny; j++) {
+           free(Ex[i][j]);   
+           free(Ey[i][j]);   
+         }
+         free(Ex[i]);
+         free(Ey[i]);
+       }
+       free(Ex); free(Ey);
+       free(dataX);   
+       free(dataY);  
+     }
+
+     break;   
+   
+   
+   
    case 4 :
      angle=atof(argv[10]);
      reangle=angle*3.14159265359/180.0;

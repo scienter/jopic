@@ -26,6 +26,9 @@
 #define DOWNFRONT	7
 #define DOWNBACK	8
 
+#define MAXRPN 64  // Max tokens in RPN
+#define MAX_CHAR 100  // Max charactor for string
+
 typedef struct _Domain 
 {
    int dimension;
@@ -266,6 +269,8 @@ typedef struct _Track
    double kp;
 }  Track;
 
+int shunting_yard(const char *input, Token *rpn);
+double evaluate_rpn(Token *rpn, int rpn_size, double x);
 void cleanMemory(Domain *D);
 void saveTrack(Domain *D,int iteration);
 void removeEdge(Domain D);

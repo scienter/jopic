@@ -146,13 +146,11 @@ void checkEnergyCons(Domain *D,int iteration)
 
 void saveDensityProfile(Domain *D)
 {
-	int i;
-	double MIN=1e7,MAX=-1e7,minX,maxX,x;
-	double *density;
+	int i,j,NUM=100,numX;
+	double MIN=1e7,MAX=-1e7,minX,maxX,x,dx,posX,ne,neFunc,realDx;
+	double *density,*dataX;
 	LoadList *LL;
-
-//			density=(double *)malloc(LL->xnodes*sizeof(double ));
-//for(i=0; i<LL->xnodes; i++)	density[i]=0.0;
+   FILE *out;
 
 	minX=MIN; maxX=MAX;
 	LL=D->loadList;
@@ -175,6 +173,49 @@ void saveDensityProfile(Domain *D)
 		maxX=0.0;
 		minX=0.0;
 	}	else ;
+
+   numX=NUM;
+   dx=(maxX-minX)/(1.0*numX);
+   dataX=(double *)malloc((numX+1)*sizeof(double ));
+   density=(double *)malloc((numX+1)*sizeof(double ));
+   for(i=0; i<=numX; i++)  {
+      dataX[i]=minX+i*dx;
+      density[i]=0.0;
+   }
+   realDx=D->dx*D->lambda;
+
+   for(j=0; j<=numX; j++) {
+      posX=dataX[j];
+
+      LL=D->loadList;
+      while(LL->next)   {
+         switch (LL->type) {
+         case Polygon :
+            if(LL->xnodes>0) {
+               for(i=0; i<LL->xnodes-1; i++) {
+                  if(posX>=LL->xpoint[i] && posX<LL->xpoint[i+1]) {
+                  	ne=((LL->xn[i+1]-LL->xn[i])/(LL->xpoint[i+1]-LL->xpoint[i])*(posX-LL->xpoint[i])+LL->xn[i]);
+                     neFunc = evaluate_rpn(LL->rpn_x[i], LL->rpn_size_x[i], posX*realDx);
+
+                     density[j]+=ne*neFunc*LL->density;
+                     i=LL->xnodes;
+                  }  else ;
+               }
+            }  else ;
+            break;
+         }
+         LL=LL->next;
+      }
+   }
+
+   out=fopen("densityProfile","w");
+   for(i=0; i<=numX; i++)
+      fprintf(out,"%g %g\n",dataX[i]*realDx,density[i]);
+   fclose(out);
+   printf("\n\ndensityProfile is made.\n\n");
+
+   free(dataX);
+   free(density);
 
 }
 

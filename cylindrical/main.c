@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
   	  	fieldSolve2(D,t,iteration);
   	  	//if(myrank==0) printf("fieldSolve2,iteration=%d\n",iteration);
 		
-  	  	solveF(D);
+  	  	solveF(D,iteration);
   	  	//if(myrank==0) printf("solveF,iteration=%d\n",iteration);
 
 

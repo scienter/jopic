@@ -81,12 +81,14 @@ void loadBeamPlasma1D(Domain *D,LoadList *LL,int s,int iteration)
 {
    int i,j,k,istart,iend,jstart,jend,kstart,kend,intNum,cnt,l,jC,kC;
    int minYSub,maxYSub,totalCnt;
-   double posX,posY,posZ,tmp,weight,charge,weightCoef,ne,nenergy,testY;
-   double px,py,pz,positionX,positionY,y,yPrime,z,zPrime,sigYPrime,sigZPrime;
-   double dt,dx,dy,dz,emitY,emitZ,betaY,betaZ,sigY,sigZ,gamma0,dGam,gamma,sigGam,delGam;
+   double posX,weight,charge,weightCoef,ne,nenergy;
+   double px,py,pz,positionX,y,yPrime,z,zPrime,sigYPrime,sigZPrime,gammaY,gammaZ;
+   double dt,dx,dy,dz,emitY,emitZ,betaY,betaZ,sigY,sigZ;
+   double gamma0,dGam,gamma,sigGam,delGam,lowGam,upGam;
    double distance,vx,delT,sqrt2,x,phase;
-   int myrank;
+   int myrank,nTasks,rank;
    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   MPI_Comm_size(MPI_COMM_WORLD, &nTasks);
    Particle ***particle;
    particle=D->particle;
 
@@ -104,14 +106,16 @@ void loadBeamPlasma1D(Domain *D,LoadList *LL,int s,int iteration)
    kC=0;
 
    sqrt2=1.414214;
-   gamma0=LL->energy/mc2;
+   gamma0=LL->energy/mc2+1.0;
    dGam=LL->spread*gamma0;
    emitY=LL->emitY/gamma0;  
    emitZ=LL->emitZ/gamma0;
-   sigY=LL->sigY/D->lambda;	//normalized
-   sigZ=LL->sigZ/D->lambda;	//normalized
-   sigYPrime=emitY/sigY*0.25/D->lambda;
-   sigZPrime=emitZ/sigZ*0.25/D->lambda;
+   gammaY=(1+LL->alphaY*LL->alphaY)/LL->betaY;
+   gammaZ=(1+LL->alphaZ*LL->alphaZ)/LL->betaZ;
+   sigY=sqrt(emitY/gammaY)/D->lambda;
+   sigZ=sqrt(emitZ/gammaZ)/D->lambda;
+   sigYPrime=sqrt(emitY*gammaY);
+   sigZPrime=sqrt(emitZ*gammaZ);
 
    if(LL->species==Test) weightCoef=0.0; else weightCoef=1.0;
 
@@ -120,11 +124,12 @@ void loadBeamPlasma1D(Domain *D,LoadList *LL,int s,int iteration)
 
    srand(myrank+1);
    intNum=(int)LL->numberInCell;
+   lowGam=1e10; upGam=-1e10;
 
    //position define      
+   gsl_qrng *q2 = gsl_qrng_alloc (gsl_qrng_sobol,2);
    for(i=istart; i<iend; i++)
    {
-     gsl_qrng *q2 = gsl_qrng_alloc (gsl_qrng_sobol,2);
      x=(i-istart+D->minXDomain)*D->dx*D->lambda;
      ne=0.0;
      if(LL->gaussMode==OFF) {
@@ -179,10 +184,38 @@ void loadBeamPlasma1D(Domain *D,LoadList *LL,int s,int iteration)
        New->index=D->index;            
        New->core=myrank;            
 
+       gamma=sqrt(1.0+px*px+py*py+pz*pz);
+       if(gamma<=lowGam) lowGam=gamma; else ;
+       if(gamma>upGam) upGam=gamma; else ;
+
        cnt++; 	   
      }		//end of while(cnt)
-     gsl_qrng_free(q2);
    }			//End of for(i,j) 
+   gsl_qrng_free(q2);
+
+   double tmpMin[nTasks],tmpMax[nTasks],intervalGam;
+
+   if(fabs(lowGam)==1e10) lowGam=0.0; else ;
+   if(fabs(upGam)==1e10) upGam=0.0; else ;
+   MPI_Barrier(MPI_COMM_WORLD);
+   MPI_Gather(&lowGam,1,MPI_DOUBLE,tmpMin,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+   MPI_Bcast(tmpMin,nTasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+   MPI_Gather(&upGam,1,MPI_DOUBLE,tmpMax,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+   MPI_Bcast(tmpMax,nTasks,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+   lowGam=1e10;      upGam=-1e10;
+   for(rank=0; rank<nTasks; rank++) {
+     if(lowGam>=tmpMin[rank] && tmpMin[rank]>0) lowGam=tmpMin[rank]; else ;
+     if(upGam<tmpMax[rank])   upGam=tmpMax[rank]; else ;
+   }
+   intervalGam=(upGam-lowGam)/(LL->numGam*1.0);
+
+   if(myrank==0) {
+     printf("minGamma=%g, maxGamma=%g\n",lowGam,upGam);
+   } else ;
+
+
 }
 
 

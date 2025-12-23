@@ -156,105 +156,121 @@ void loadDefinedPlasma(Domain *D,LoadList *LL,int s)
 
 void loadPolygonPlasma(Domain *D,LoadList *LL,int s,int istart,int iend,int iteration)
 {
-  int nn,i,j,k,jstart,jend,kstart,kend,intNum,cnt,l,m,n;
-  int modeX,modeYZ;
-  double posX,posY,posZ,v1,v2,v3,weight,charge,centerX,centerY,centerZ,tmp,weightCoef,invNum;
-  double ne,randTest,positionX[3],positionY[3],positionZ[3],gaussCoefX,polyCoefX,gaussCoefYZ,polyCoefYZ;
-  Particle ***particle;
-  particle=D->particle;
-  int myrank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-  double coef2D,coef3D;
+  	int nn,i,j,k,jstart,jend,kstart,kend,intNum,cnt,l,m,n;
+  	int modeX,modeYZ;
+  	double posX,posY,posZ,v1,v2,v3,weight,charge,centerX,centerY,centerZ,tmp,weightCoef,invNum,realDx,realDy,realDz,y0,z0;
+  	double randTest,positionX[3],positionY[3],positionZ[3],gaussCoefX,polyCoefX,gaussCoefYZ,polyCoefYZ;
+   double neX,neY,neZ,neFuncX,neFuncY,neFuncZ;
+  	Particle ***particle;
+  	particle=D->particle;
+  	int myrank;
+  	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  	double coef2D,coef3D;
 
-  ptclList *New,*p;   
+  	ptclList *New,*p;   
 
-  jstart=D->jstart;   jend=D->jend;
-  kstart=D->kstart;   kend=D->kend;
-  centerX=LL->centerX;
-  centerY=LL->centerY;
-  centerZ=LL->centerZ;
-  gaussCoefX=LL->gaussCoefX;
-  polyCoefX=LL->polyCoefX;
-  gaussCoefYZ=LL->gaussCoefYZ;
-  polyCoefYZ=LL->polyCoefYZ;
-  modeX=LL->modeX;
-  modeYZ=LL->modeYZ;
-  charge=LL->charge;
-  if(LL->species==Test) weightCoef=0.0; else weightCoef=1.0;
+  	jstart=D->jstart;   jend=D->jend;
+  	kstart=D->kstart;   kend=D->kend;
+  	centerX=LL->centerX;
+  	centerY=LL->centerY;
+  	centerZ=LL->centerZ;
+  	gaussCoefX=LL->gaussCoefX;
+  	polyCoefX=LL->polyCoefX;
+  	gaussCoefYZ=LL->gaussCoefYZ;
+  	polyCoefYZ=LL->polyCoefYZ;
+  	modeX=LL->modeX;
+  	modeYZ=LL->modeYZ;
+  	charge=LL->charge;
+  	if(LL->species==Test) weightCoef=0.0; else weightCoef=1.0;
 
-  srand(iteration+myrank);
-  intNum=(int)LL->numberInCell;
+  	srand(iteration+myrank);
+  	intNum=(int)LL->numberInCell;
 
-  coef2D=coef3D=0.0;
-  if(D->dimension>1) coef2D=1; else;
-  if(D->dimension>2) coef3D=1; else;
-  if(LL->numberInCell==0) invNum=0.0;
-  else                    invNum=1.0/LL->numberInCell;
+  	coef2D=coef3D=0.0;
+  	if(D->dimension>1) coef2D=1; else;
+  	if(D->dimension>2) coef3D=1; else;
+  	if(LL->numberInCell==0) invNum=0.0;
+  	else                    invNum=1.0/LL->numberInCell;
+  	realDx=D->dx*D->lambda;
+  	realDy=D->dy*D->lambda;
+  	realDz=D->dz*D->lambda;
 
-  //position define   
-  gsl_qrng *q3 = gsl_qrng_alloc (gsl_qrng_sobol,3);   
-  for(i=istart; i<iend; i++)
-    for(j=jstart; j<jend; j++)
-      for(k=kstart; k<kend; k++)
-      {
-        for(l=0; l<LL->xnodes-1; l++)
-          for(m=0; m<LL->ynodes-1; m++)
-            for(n=0; n<LL->znodes-1; n++)
-            {
-              posX=(double)(i+D->minXSub-D->istart);
-              posY=(double)(j+D->minYSub-jstart);
-              posZ=(double)(k+D->minZSub-kstart);
- 
-              if(posX>=LL->xpoint[l] && posX<LL->xpoint[l+1] &&
-                 posY>=LL->ypoint[m] && posY<LL->ypoint[m+1] &&
-                 posZ>=LL->zpoint[n] && posZ<LL->zpoint[n+1])
-              {
-                ne=((LL->xn[l+1]-LL->xn[l])/(LL->xpoint[l+1]-LL->xpoint[l])*(posX-LL->xpoint[l])+LL->xn[l]);
-                ne*=((LL->yn[m+1]-LL->yn[m])/(LL->ypoint[m+1]-LL->ypoint[m])*(posY-LL->ypoint[m])+LL->yn[m]);
-                ne*=((LL->zn[n+1]-LL->zn[n])/(LL->zpoint[n+1]-LL->zpoint[n])*(posZ-LL->zpoint[n])+LL->zn[n]);
-                weight=ne*invNum*weightCoef;
+  	//position define   
+	gsl_qrng *q3 = gsl_qrng_alloc (gsl_qrng_sobol,3);   
+	for(i=istart; i<iend; i++)  
+	{
+ 		neX=neFuncX=0.0;
+		posX=(double)(i+D->minXSub-D->istart);
+     	for(l=0; l<LL->xnodes-1; l++) {
+      	if(posX>=LL->xpoint[l] && posX<LL->xpoint[l+1]) {
+        		y0=evaluate_rpn(LL->rpn_x_y0[l],LL->rpn_size_x_y0[l],posX*realDx)*coef2D;
+        		z0=evaluate_rpn(LL->rpn_x_z0[l],LL->rpn_size_x_z0[l],posX*realDx)*coef3D;
+        		neX=((LL->xn[l+1]-LL->xn[l])/(LL->xpoint[l+1]-LL->xpoint[l])*(posX-LL->xpoint[l])+LL->xn[l]);
+        		neFuncX=evaluate_rpn(LL->rpn_x[l],LL->rpn_size_x[l],posX*realDx);
+			} else ;
+		}
+		for(j=jstart; j<jend; j++)
+		{
+        	neY=neFuncY=0.0;
+      	posY=(double)(j+D->minYSub-jstart+y0/realDy);
+         for(m=0; m<LL->ynodes-1; m++) {
+         	if(posY>=LL->ypoint[m] && posY<LL->ypoint[m+1]) {
+         		neY=((LL->yn[m+1]-LL->yn[m])/(LL->ypoint[m+1]-LL->ypoint[m])*(posY-LL->ypoint[m])+LL->yn[m]);
+         		neFuncY=evaluate_rpn(LL->rpn_y[m],LL->rpn_size_y[m],posY*realDy);
+				} else ;
+			}
+      	for(k=kstart; k<kend; k++)
+      	{
+ 				neZ=neFuncZ=0.0;
+           	posZ=(double)(k+D->minZSub-kstart+z0/realDz);
+           	for(n=0; n<LL->znodes-1; n++)	{
+         		if(posZ>=LL->zpoint[n] && posZ<LL->zpoint[n+1])  {
+		      		neZ=((LL->zn[n+1]-LL->zn[n])/(LL->zpoint[n+1]-LL->zpoint[n])*(posZ-LL->zpoint[n])+LL->zn[n]);
+            		neFuncZ=evaluate_rpn(LL->rpn_z[n],LL->rpn_size_z[n],posZ*realDz);
+            	} else ;
+				}
+            weight=neX*neY*neZ*neFuncX*neFuncY*neFuncZ*invNum*weightCoef;
 
-                cnt=0;
-                while(cnt<intNum/2)
-                {               
-                  positionX[0]=randomValue(1.0);
-                  positionY[0]=randomValue(1.0);
-                  positionZ[0]=randomValue(1.0);
-                  positionX[1]=1.0-positionX[0];
-                  positionY[1]=1.0-positionY[0];
-                  positionZ[1]=1.0-positionZ[0];
+		      cnt=0;
+      		while(cnt<intNum/2)
+            {               
+              	positionX[0]=randomValue(1.0);
+               positionY[0]=randomValue(1.0);
+               positionZ[0]=randomValue(1.0);
+               positionX[1]=1.0-positionX[0];
+               positionY[1]=1.0-positionY[0];
+               positionZ[1]=1.0-positionZ[0];
 //                  random3D_sobol(&positionX,&positionY,&positionZ,q3);
-                  for(nn=0; nn<2; nn++) {
-                    New = (ptclList *)malloc(sizeof(ptclList)); 
-                    New->next = particle[i][j][k].head[s]->pt;
-                    particle[i][j][k].head[s]->pt = New;
-                    New->x = positionX[nn];
-                    New->oldX=i+positionX[nn];
-                    New->y = positionY[nn]*coef2D;
-                    New->oldY=(j+positionY[nn])*coef2D;
-                    New->z = positionZ[nn]*coef3D;
-                    New->oldZ=(k +positionZ[nn])*coef3D;
-                    New->E1=New->E2=New->E3=0.0;
-                    New->B1=New->B2=New->B3=0.0;
-                    v1=maxwellianVelocity(LL->temperature,LL->mass)/velocityC;
-                    v2=maxwellianVelocity(LL->temperature,LL->mass)/velocityC;
-                    v3=maxwellianVelocity(LL->temperature,LL->mass)/velocityC;
-                    New->p1=-D->gamma*D->beta+v1;
-                    New->p2=v2;
-                    New->p3=v3;
-                    New->weight=weight;
-                    New->charge=charge;
-                    D->index+=1;
-                    New->index=D->index;            
-                    New->core=myrank;            
-                  } 
-                  cnt++;
-                }		//end of while(cnt)
-             } else ;		//End of if (l,m,n)
-           }			//End of for(l,m,n)
-
-      }		//End of for(i,j,k)    
-        gsl_qrng_free(q3);     
+               for(nn=0; nn<2; nn++) {
+                	New = (ptclList *)malloc(sizeof(ptclList)); 
+                 	New->next = particle[i][j][k].head[s]->pt;
+                 	particle[i][j][k].head[s]->pt = New;
+                 	New->x = positionX[nn];
+                 	New->oldX=i+positionX[nn];
+                 	New->y = positionY[nn]*coef2D;
+                 	New->oldY=(j+positionY[nn])*coef2D;
+                 	New->z = positionZ[nn]*coef3D;
+                 	New->oldZ=(k +positionZ[nn])*coef3D;
+                 	New->E1=New->E2=New->E3=0.0;
+                	New->B1=New->B2=New->B3=0.0;
+                	v1=maxwellianVelocity(LL->temperature,LL->mass)/velocityC;
+                 	v2=maxwellianVelocity(LL->temperature,LL->mass)/velocityC;
+                 	v3=maxwellianVelocity(LL->temperature,LL->mass)/velocityC;
+                 	New->p1=-D->gamma*D->beta+v1;
+                 	New->p2=v2;
+                 	New->p3=v3;
+                 	New->weight=weight;
+                 	New->charge=charge;
+                 	D->index+=1;
+                 	New->index=D->index;            
+                 	New->core=myrank;            
+               } 
+               cnt++;
+            }		//end of while(cnt)
+         }	   //End of for (k)
+      }		//End of for(j)    
+   }		//End of for(i)    
+	gsl_qrng_free(q3);     
 }
 
 double maxwellianVelocity(double temperature,double mass)

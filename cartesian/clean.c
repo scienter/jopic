@@ -67,17 +67,35 @@ void cleanMemory(Domain *D)
         if(LL->xnodes>0)  {
           free(LL->xpoint);	
           free(LL->xn);	
+          for(i=0; i<LL->xnodes; i++) free(LL->rpn_x[i]); 
+          free(LL->expr_x);
+          free(LL->rpn_size_x); 
+          free(LL->rpn_x); 
+          free(LL->expr_x_y0);
+          free(LL->rpn_size_x_y0); 
+          free(LL->rpn_x_y0); 
+          free(LL->expr_x_z0);
+          free(LL->rpn_size_x_z0); 
+          free(LL->rpn_x_z0); 
         } else ;
         if(D->dimension>1)  {
           if(LL->ynodes>0)   {
             free(LL->ypoint);
             free(LL->yn);
+          	for(i=0; i<LL->ynodes; i++) free(LL->rpn_y[i]); 
+          	free(LL->expr_y);
+          	free(LL->rpn_size_y); 
+          	free(LL->rpn_y); 
           } else ;
         } else ;
         if(D->dimension>2) {
           if(LL->znodes>0)  {
             free(LL->zpoint);
             free(LL->zn);
+          	for(i=0; i<LL->znodes; i++) free(LL->rpn_z[i]); 
+          	free(LL->expr_z);
+          	free(LL->rpn_size_z); 
+          	free(LL->rpn_z); 
           } else ;
         } else ;
         break;

@@ -124,7 +124,8 @@ void saveParticleHDF(Domain *D,int iteration,int s,double minPx,double density)
       H5Sselect_hyperslab(memspace,H5S_SELECT_SET,offset,stride,count,block);
       
       plist_id=H5Pcreate(H5P_DATASET_XFER);
-      H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_INDEPENDENT);
+      //H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_INDEPENDENT);
+      H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_COLLECTIVE);
       H5Dwrite(dset_id, H5T_NATIVE_DOUBLE,memspace,filespace,plist_id,data);
       H5Pclose(plist_id);
       H5Sclose(memspace);

@@ -8,22 +8,22 @@
 void MPI_TransferDen_Xplus(Domain *D,double ***f1,double ***f2,int ny,int share);
 void MPI_TransferDen_Xminus(Domain *D,double ***f1,double ***f2,int ny,int share);
 void solveF_Yee(Domain *D);
-void solveF_Split(Domain *D);
+void solveF_Split(Domain *D,int iteration);
 
 
-void solveF(Domain D)
+void solveF(Domain D,int iteration)
 {
   switch (D.fieldType) {
   case Yee :
     solveF_Yee(&D);
     break;
   case Split :
-    solveF_Split(&D);
+    solveF_Split(&D,iteration);
     break;
   }
 }
 
-void solveF_Split(Domain *D)
+void solveF_Split(Domain *D,int iteration)
 {
   int i,j,m,s,numMode,istart,iend,jstart,jend,minRSub,n;
   double invDr,invDz,r,dr,***val,w0,w1;
@@ -90,6 +90,10 @@ void solveF_Split(Domain *D)
   	  	  	   0.5*invDr/r*((r+0.5)*(upPrR+upPlR)-(r-0.5)*(dnPrR+dnPlR))
   	  	  	  	+0.5*invDz*(D->EzNowR[m][i+1][j]-D->EzNowR[m][i-1][j])
   	  	  	  	-2.0*M_PI*(D->RhoNoPairR[m][i][j]+D->RhoPairR[m][i][j]);
+         //if(D->RhoNoPairR[m][i][j]-D->RhoPairR[m][i][j]!=0) {
+         //   printf("iteration=%d,FR[%d][%d][%d]=%g, nopairR-pairR=%g\n",iteration,m,i,j,m,i,j,D->FR[m][i][j],D->RhoNoPairR[m][i][j]-D->RhoPairR[m][i][j]);
+         //   exit(0);
+         //}
   	  	}
 
   	for(m=1; m<numMode; m++)
@@ -123,6 +127,14 @@ void solveF_Split(Domain *D)
           		+0.25*invDr/r*m*(upSrR+upSlR+dnSrR+dnSlR)
           		+0.5*invDz*(D->EzNowI[m][i+1][j]-D->EzNowI[m][i-1][j])
           		-2*M_PI*(D->RhoNoPairI[m][i][j]+D->RhoPairI[m][i][j]);
+            //if(D->RhoNoPairR[m][i][j]-D->RhoPairR[m][i][j]!=0) {
+            //   printf("iteration=%d,FR[%d][%d][%d]=%g,nopairR-pairR=%g\n",iteration,m,i,j,m,i,j,D->FR[m][i][j],D->RhoNoPairR[m][i][j]-D->RhoPairR[m][i][j]);
+            //   exit(0);
+            //}
+            //if(D->RhoNoPairI[m][i][j]-D->RhoPairI[m][i][j]!=0) {
+            //   printf("iteration=%d,FI[%d][%d][%d]=%g,nopairI-pairI=%g\n",iteration,m,i,j,m,i,j,D->FI[m][i][j],D->RhoNoPairI[m][i][j]-D->RhoPairI[m][i][j]);
+            //   exit(0);
+            //}
       	}		
 
   	//axis
@@ -136,6 +148,10 @@ void solveF_Split(Domain *D)
    	     	invDr*(upPrR+upPlR)
    	     	+0.5*invDz*(D->EzNowR[m][i+1][j]-D->EzNowR[m][i-1][j])
    	     	-2.0*M_PI*(D->RhoNoPairR[m][i][j]+D->RhoPairR[m][i][j]);
+         //if(D->RhoNoPairR[m][i][j]-D->RhoPairR[m][i][j]!=0) {
+         //   printf("iteration=%d,FR[%d][%d][%d]=%g, nopairR=%g, pairR=%g\n",iteration,m,i,j,m,i,j,D->FR[m][i][j],D->RhoNoPairR[m][i][j],D->RhoPairR[m][i][j]);
+         //   exit(0);
+         //}
    	}
   	for(m=1; m<numMode; m++) 
     	for(i=istart; i<iend; i++) {
@@ -153,13 +169,21 @@ void solveF_Split(Domain *D)
       	  	-1.0*invDr*m*(upSrI+upSlI)
       	  	+0.5*invDz*(D->EzNowR[m][i+1][j]-D->EzNowR[m][i-1][j])
       	  	-2.0*M_PI*(D->RhoNoPairR[m][i][j]+D->RhoPairR[m][i][j]);
+         //if(D->RhoNoPairR[m][i][j]-D->RhoPairR[m][i][j]!=0) {
+         //   printf("iteration=%d,FR[%d][%d][%d]=%g,nopairR=%g, pairR=%g\n",iteration,m,i,j,m,i,j,D->FR[m][i][j],D->RhoNoPairR[m][i][j],D->RhoPairR[m][i][j]);
+         //   exit(0);
+         //}
       	D->FI[m][i][j]=
    	     	invDr*(upPrI+upPlI)
       	  	+1.0*invDr*m*(upSrR+upSlR)
       	  	+0.5*invDz*(D->EzNowI[m][i+1][j]-D->EzNowI[m][i-1][j])
       	  	-2.0*M_PI*(D->RhoNoPairI[m][i][j]+D->RhoPairI[m][i][j]);
+         //if(D->RhoNoPairI[m][i][j]-D->RhoPairI[m][i][j]!=0) {
+         //   printf("iteration=%d,FI[%d][%d][%d]=%g,nopairI=%g, pairI=%g\n",iteration,m,i,j,m,i,j,D->FI[m][i][j],D->RhoNoPairI[m][i][j],D->RhoPairI[m][i][j]);
+         //   exit(0);
+         //}
 	   }
-   
+      
 
    D->shareF[0]=D->FR;
    D->shareF[1]=D->FI;

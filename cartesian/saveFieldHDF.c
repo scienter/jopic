@@ -45,7 +45,6 @@ void saveEFieldHDF(Domain *D,int iteration)
     } else      ;
     MPI_Barrier(MPI_COMM_WORLD);
 	 	 
-
     offset[0]=D->minXSub-D->minXDomain;
     offset[1]=D->minYSub-D->minYDomain;
     offset[2]=D->minZSub-D->minZDomain;
@@ -63,7 +62,6 @@ void saveEFieldHDF(Domain *D,int iteration)
 //		sleep(1);
 //      saveFieldComp(D->F,name,"/F",nx,ny,nz,nxSub,nySub,nzSub,istart,iend,jstart,jend,kstart,kend,offset);
 //      MPI_Barrier(MPI_COMM_WORLD);
-
       if(myrank==0)   {
         saveCoordHDF(D,name);
         sprintf(fileName,"fieldE%d",iteration);
@@ -73,7 +71,6 @@ void saveEFieldHDF(Domain *D,int iteration)
       MPI_Barrier(MPI_COMM_WORLD);
 
       break;
-
     case Yee:
     case Pukhov:
       saveFieldComp(D->Ex,name,"/Ex",nx,ny,nz,nxSub,nySub,nzSub,istart,iend,jstart,jend,kstart,kend,offset);
@@ -92,6 +89,7 @@ void saveEFieldHDF(Domain *D,int iteration)
       }	 else  ;
       break;
     }   //End of switch (fieldType)
+
 }
 
 void saveBFieldHDF(Domain *D,int iteration)

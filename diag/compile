@@ -13,8 +13,8 @@
 #CFLAGS = "-I/opt/gsl/2.6/include -I/opt/fftw/3.3.8/include -I/opt/hdf5/1.10.3/include"
 #LDFLAGS = "-L/opt/gsl/2.6/lib -L/opt/fftw/3.3.8/lib -L/opt/hdf5/1.10.3/lib"
 
-CFLAGS="-I/opt/hdf5/1.10.3/include -I/opt/gsl/2.6/include"
-LDFLAGS="-L/opt/hdf5/1.10.3/lib -L/opt/gsl/2.6/lib"
+CFLAGS="-I/opt/hdf5/1.14.5/include -I/opt/gsl/2.8/include"
+LDFLAGS="-L/opt/hdf5/1.14.5/lib -L/opt/gsl/2.8/lib"
 
 
 gcc -o fft fft.c -lm

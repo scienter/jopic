@@ -853,7 +853,9 @@ void Bsolve2D_Yee(Domain *D,int iteration)
     dtOverdx=D->dt/D->dx;
 
     for(j=jstart; j<jend; j++) {
-      D->upr[j]=1.0;                                                                                                       D->upd[j]=1.0;                                                                                                       D->dnr[j]=1.0;
+      D->upr[j]=1.0;
+      D->upd[j]=1.0;
+      D->dnr[j]=1.0;
       D->dnd[j]=1.0;
     }
     for(i=istart; i<iend; i++) {
@@ -875,7 +877,7 @@ void Bsolve2D_Yee(Domain *D,int iteration)
       for(j=jstart; j<jend; j++)
       {
         tmpr=rtr*ltr*D->upr[j]*D->dnr[j];
-		  tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
+        tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
 
         oldBx=D->Bx[i][j][k];
         oldBy=D->By[i][j][k];
@@ -916,8 +918,8 @@ void Esolve2D_Yee(Domain *D,int iteration)
 
     for(j=jstart; j<jend; j++) {
       D->upr[j]=1.0;
-		D->upd[j]=1.0;
-		D->dnr[j]=1.0;
+      D->upd[j]=1.0;
+      D->dnr[j]=1.0;
       D->dnd[j]=1.0;
     }
     for(i=istart; i<iend; i++) {
@@ -936,7 +938,7 @@ void Esolve2D_Yee(Domain *D,int iteration)
     by=1.0-2.0*ay;
     dtOverdy=D->dt/D->dy;
     dtOverdx=D->dt/D->dx;
-	 dbPiDt=2.0*M_PI*D->dt;
+    dbPiDt=2.0*M_PI*D->dt;
 
     k=0;
     for(i=istart; i<iend; i++)
@@ -946,7 +948,7 @@ void Esolve2D_Yee(Domain *D,int iteration)
       for(j=jstart; j<jend; j++)
       {
         tmpr=rtr*ltr*D->upr[j]*D->dnr[j];
-		  tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
+        tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
 
         oldEx=D->Ex[i][j][k];
         oldEy=D->Ey[i][j][k];
@@ -1057,20 +1059,20 @@ void PS_solve2D_Split(Domain *D,int iteration)
    dF=D->dF;
 
    for(j=jstart; j<jend; j++) {
-     	D->upr[j]=1.0; 
-     	D->upd[j]=1.0;
-     	D->dnr[j]=1.0;
-     	D->dnd[j]=1.0;
+      D->upr[j]=1.0; 
+      D->upd[j]=1.0;
+      D->dnr[j]=1.0;
+      D->dnd[j]=1.0;
    }
    for(i=istart; i<iend; i++) {
-     	D->rtr[i]=1.0;
-     	D->rtd[i]=1.0;
-     	D->ltr[i]=1.0;
-     	D->ltd[i]=1.0;
+      D->rtr[i]=1.0;
+      D->rtd[i]=1.0;
+      D->ltr[i]=1.0;
+      D->ltd[i]=1.0;
    }
    if(D->pmlOn==ON && iteration>D->pmlStart) {
-     	absorb_UD3(D);
-     	absorb_RL3(D);
+      absorb_UD3(D);
+      absorb_RL3(D);
    } else ;
 
    dtOverdy=D->dt/D->dy;
@@ -1080,46 +1082,46 @@ void PS_solve2D_Split(Domain *D,int iteration)
 
    for(i=istart; i<iend; i++)
    {
-     	rtr=D->rtr[i]; ltr=D->ltr[i];
-     	rtd=D->rtd[i]; ltd=D->ltd[i];
-     	for(j=jstart; j<jend; j++)
-     	{
-			oldPl=D->Pl[i][j][k];
-			oldSl=D->Sl[i][j][k];
-     		tmpr=rtr*ltr*D->upr[j]*D->dnr[j];
-	  		tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
+      rtr=D->rtr[i]; ltr=D->ltr[i];
+      rtd=D->rtd[i]; ltd=D->ltd[i];
+      for(j=jstart; j<jend; j++)
+      {
+         oldPl=D->Pl[i][j][k];
+         oldSl=D->Sl[i][j][k];
+ 	 tmpr=rtr*ltr*D->upr[j]*D->dnr[j];
+	 tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
 
-     	  	tmp=-qtDtByDy*(D->Ex[i+1][j+1][k]+D->Ex[i][j+1][k]-D->Ex[i+1][j][k]-D->Ex[i][j][k])-piDt*D->Jy[i+1][j][k]+dF*dtOverdy*(D->F[i+1][j+1][k]-D->F[i+1][j][k]);
-     	  	D->Pl[i][j][k]=tmpd*(D->Pl[i+1][j][k]+tmp*tmpr);
+     	 tmp=-qtDtByDy*(D->Ex[i+1][j+1][k]+D->Ex[i][j+1][k]-D->Ex[i+1][j][k]-D->Ex[i][j][k])-piDt*D->Jy[i+1][j][k]+dF*dtOverdy*(D->F[i+1][j+1][k]-D->F[i+1][j][k]);
+     	 D->Pl[i][j][k]=tmpd*(D->Pl[i+1][j][k]+tmp*tmpr);
 
-     	  	tmp=-qtDtByDy*(D->Bx[i+1][j][k]+D->Bx[i][j][k]-D->Bx[i+1][j-1][k]-D->Bx[i][j-1][k])-piDt*D->Jz[i+1][j][k];
-     	  	D->Sl[i][j][k]=tmpd*(D->Sl[i+1][j][k]+tmp*tmpr);
+     	 tmp=-qtDtByDy*(D->Bx[i+1][j][k]+D->Bx[i][j][k]-D->Bx[i+1][j-1][k]-D->Bx[i][j-1][k])-piDt*D->Jz[i+1][j][k];
+     	 D->Sl[i][j][k]=tmpd*(D->Sl[i+1][j][k]+tmp*tmpr);
 
-			D->PlC[i][j][k]=0.5*(oldPl+D->Pl[i][j][k]);
-			D->SlC[i][j][k]=0.5*(oldSl+D->Sl[i][j][k]);				 
-     	}
+         D->PlC[i][j][k]=0.5*(oldPl+D->Pl[i][j][k]);
+         D->SlC[i][j][k]=0.5*(oldSl+D->Sl[i][j][k]);				 
+      }
    }
 
    for(i=iend-1; i>=istart; i--)
    {
-     	rtr=D->rtr[i]; ltr=D->ltr[i];
-     	rtd=D->rtd[i]; ltd=D->ltd[i];
-     	for(j=jstart; j<jend; j++)
-     	{
-			oldPr=D->Pr[i][j][k];
-			oldSr=D->Sr[i][j][k];			  
-     	  	tmpr=rtr*ltr*D->upr[j]*D->dnr[j];
-	  	   tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
+      rtr=D->rtr[i]; ltr=D->ltr[i];
+      rtd=D->rtd[i]; ltd=D->ltd[i];
+      for(j=jstart; j<jend; j++)
+      {
+         oldPr=D->Pr[i][j][k];
+         oldSr=D->Sr[i][j][k];			  
+     	 tmpr=rtr*ltr*D->upr[j]*D->dnr[j];
+	 tmpd=rtd*ltd*D->upd[j]*D->dnd[j];
 
-     	  	tmp=qtDtByDy*(D->Ex[i][j+1][k]+D->Ex[i-1][j+1][k]-D->Ex[i][j][k]-D->Ex[i-1][j][k])-piDt*D->Jy[i][j][k]+dF*dtOverdy*(D->F[i][j+1][k]-D->F[i][j][k]);
-     	  	D->Pr[i][j][k]=tmpd*(D->Pr[i-1][j][k]+tmp*tmpr);
+     	 tmp=qtDtByDy*(D->Ex[i][j+1][k]+D->Ex[i-1][j+1][k]-D->Ex[i][j][k]-D->Ex[i-1][j][k])-piDt*D->Jy[i][j][k]+dF*dtOverdy*(D->F[i][j+1][k]-D->F[i][j][k]);
+     	 D->Pr[i][j][k]=tmpd*(D->Pr[i-1][j][k]+tmp*tmpr);
 
-     	  	tmp=-qtDtByDy*(D->Bx[i][j][k]+D->Bx[i-1][j][k]-D->Bx[i][j-1][k]-D->Bx[i-1][j-1][k])-piDt*D->Jz[i][j][k];
-     	  	D->Sr[i][j][k]=tmpd*(D->Sr[i-1][j][k]+tmp*tmpr);
+     	 tmp=-qtDtByDy*(D->Bx[i][j][k]+D->Bx[i-1][j][k]-D->Bx[i][j-1][k]-D->Bx[i-1][j-1][k])-piDt*D->Jz[i][j][k];
+     	 D->Sr[i][j][k]=tmpd*(D->Sr[i-1][j][k]+tmp*tmpr);
 
-			D->PrC[i][j][k]=0.5*(oldPr+D->Pr[i][j][k]);
-			D->SrC[i][j][k]=0.5*(oldSr+D->Sr[i][j][k]);					 
-     	}	
+         D->PrC[i][j][k]=0.5*(oldPr+D->Pr[i][j][k]);
+         D->SrC[i][j][k]=0.5*(oldSr+D->Sr[i][j][k]);					 
+      }	
    }
 
 }

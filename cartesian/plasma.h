@@ -39,6 +39,24 @@
 #define byNumber	0
 #define byDensity	1
 
+
+// Token types (use typedef enum for clarity and portability)
+typedef enum {
+    TOK_NUM,
+    TOK_VAR,
+    TOK_OP
+} TokenType;
+
+// Token structure
+typedef struct {
+    TokenType type;
+    double num;  // For TOK_NUM
+    struct op_s *op;  // For TOK_OP
+} Token;
+
+
+
+
 typedef struct _LoadList  {
    int type;
    int species;
@@ -49,15 +67,16 @@ typedef struct _LoadList  {
    double criticalDensity;
    double targetW;
    double num;      //exceeded number of particle which is less than 1
-   int xnodes;     //longitudinal point number
-   double *xn;      //longitudinal density (1 is P->density)
-   double *xpoint;    //longitudinal point
-   int ynodes;     //transverse point number
-   double *yn;      //transverse density (1 is P->density)
-   double *ypoint;    //transverse point
-   int znodes;     //transverse point number
-   double *zn;      //transverse density (1 is P->density)
-   double *zpoint;    //transverse point
+   int xnodes, ynodes, znodes;     //point numbers
+   double *xn, *yn, *zn;      			//density (1 is P->density)
+   double *xpoint, *ypoint, *zpoint;  	// point
+   char **expr_x, **expr_y, **expr_z;    //function_XYZ
+   Token **rpn_x, **rpn_y, **rpn_z;
+   int *rpn_size_x, *rpn_size_y, *rpn_size_z;
+   //center offset
+   char **expr_x_y0, **expr_x_z0;
+   Token **rpn_x_y0, **rpn_x_z0;
+   int *rpn_size_x_y0, *rpn_size_x_z0;
    double givenMinPx;	//for saveParticle option
 
    //defined plasma

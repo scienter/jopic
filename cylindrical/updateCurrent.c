@@ -139,7 +139,7 @@ void updateCurrent_Split_umeda(Domain *D,int nSpecies,int iteration)
    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
    //initialize J
-	if(D->fieldIonization==OFF) {
+	//if(D->fieldIonization==OFF) {
 		for(m=0; m<numMode; m++)
          for(i=0; i<nxSub+5; i++)
        	   for(j=0; j<nySub+5; j++)   {
@@ -150,7 +150,7 @@ void updateCurrent_Split_umeda(Domain *D,int nSpecies,int iteration)
 				   D->JrI[m][i][j]=0.0;
 				   D->JpI[m][i][j]=0.0;
 			  }
-	} else ;
+	//} else ;
 
    alpha=2.0; 
    for(i=istart; i<iend; i++)

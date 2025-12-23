@@ -1,0 +1,138 @@
+[Save]
+ field_save=ON			//ON, OFF
+ particle_save=ON
+ density_save=ON
+ dump_save=ON
+
+ field_format=HDF				//present, only HDF
+ particle_format=HDF			//present, only HDF
+ density_format=HDF			//present, only HDF
+ dump_format=HDF				//present, only HDF
+
+ dump_start=10000
+ dump_save_step=10000
+
+ resolution_change=OFF			//not ready
+ resolution_high=OFF				//not ready
+ resolution_low=OFF				//not ready
+ resolution_change_step=200	//not ready
+ resolution_rate_X=1				//not ready
+ resolution_rate_Y=1				//not ready
+ resolution_rate_Z=1				//not ready
+
+
+
+[PML]
+ pml=ON
+ pml_start=1000				//when PML start, unit is iteration step
+ up_pml_cells=40
+
+ left_pml_cells=1				//not ready
+ right_pml_cells=1			//not ready
+ down_pml_cells=5				//not ready
+ front_pml_cells=5			//not ready
+ back_pml_cells=5				//not ready
+ pml_r=0.04
+ pml_d=0.02
+
+
+[Domain]
+
+ mode_number=3								// number of m modes, 2 is default.
+ current_conservation=Lifschitz		// Lifschitz or Davidson
+ current_order=1							// not ready, Only '1'
+ interpolation_order=1					//	not ready
+ field_type=Split							// Yee, Split
+
+
+ max_time=2600								//[minute]	not ready
+ max_step=20000
+ save_step=1000
+ save_start=0
+ center_save_step=1000					//it will save centerfield file.
+
+ L=40							//how many cores?
+ M=1							//not ready
+ N=1							//not ready
+
+ moving_domain=ON
+ moving_velocity=1.0		//moving domain velocity. 1 is C.
+
+ minX=0
+ maxX=40e-6
+ minY=0e-6					// It must be 0
+ maxY=30e-6
+ minZ=-30e-6				//not ready
+ maxZ=30e-6					//not ready
+ lambda=0.8e-6
+ division_lambda=20		// dx = [wavelength/divisionLambda]
+ dt_ratio=0.96				// dt = dx * dt_ratio
+
+ dr_over_dz = 10			// dr = dx * dr_over_dz
+
+ boost_gamma=1				// not ready
+ filter_iteration=0		// not ready
+
+ field_ionization=OFF		//ON, OFF
+
+ dF=0.01				// If you want Marder's method, dF=0.01 or 0.02 ...
+
+[Laser]
+ loading_method=Boundary
+ wavelength=0.8e-6
+ a0=4.0
+ rU=5			 	//number of wave length
+ rD=5
+ flat=0
+ retard=0
+ polarity=2
+ loadPositionX=0e-5		//laser start position [m]
+ loadPositionY=0.0e-5		//laser start position [m]
+ beamWaist=10e-6
+ focus=100e-6
+
+
+[External]
+ Ex=0				//not ready
+ Ey=0				//not ready
+ Ez=0				//not ready
+ Bx=0				//not ready
+ By=0				//not ready
+ Bz=0				//not ready
+
+[Plasma]
+ species=Electron
+ type=Polygon
+ pair=ON					// ON for 'Marder's method'
+ density=1.0e25
+ numberRZ=4				// number in cell = numberRZ * numberPhi
+ numberPhi=12
+ startIndex=0			// not ready
+ temperature=0			// [eV]
+
+ channel_coef = 1
+ channel_Xnodes=3
+ channel_X0=10e-6
+ channel_X1=500e-6
+ channel_Xn0=0
+ channel_Xn1=1
+
+
+ Xnodes=4
+ X0=10e-6
+ X1=100e-6
+ X2=50000e-6
+ X3=4000000e-6
+ Xn0=0					// density ratio of 'density'
+ Xn1=1
+ Xn2=1
+ Xn3=1
+
+ Ynodes=3
+ Y0=0e-6					// It must be '0'
+ Y1=68e-6
+ Y2=80e-6
+ Yn0=1
+ Yn1=1
+ Yn2=0
+

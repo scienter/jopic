@@ -33,6 +33,10 @@ int FindParameters (char *block, int rank, char *options, char *input, char *ret
    count = 0;
 
    fp = fopen(input,"r");
+   if (!fp) {
+       printf("failed to open file.: %s\n", input);
+       return 0;
+   }
    while (fgets(str,500,fp))
    {
       blockHead = block;
@@ -44,7 +48,7 @@ int FindParameters (char *block, int rank, char *options, char *input, char *ret
 
      // Find the block name 
       p = str;
-      while (*p==' ' && *p) p++;
+      while (*p==' ') p++;
 
       if (*p == '[')
       {
@@ -53,21 +57,22 @@ int FindParameters (char *block, int rank, char *options, char *input, char *ret
          if (*p !=']')
          { 
             printf("Syntax error in the input. ']' is missing\n"); 
-            printf("%s\n", str); 
+            printf("%s\n", str);
+            fclose(fp); 
             exit(0);  
          } 
 
-         p = p2;  p++;
+         p = p2 + 1;
 
-         while (*p==' ' && *p) p++;
+         while (*p==' ') p++;
 
          while (*p == *block && *p && *block) {  p++;  block++;  }
        
          if (! *block) 
          {
-            if (*p == ' ') while (*p == ' ' && *p) p++;
+            while (*p == ' ' && *p) p++;
             if (*p == ']')  foundBlock = 1;
-            else  foundBlock = 0;
+            //else  foundBlock = 0;
          }
       } 
 
@@ -87,7 +92,7 @@ int FindParameters (char *block, int rank, char *options, char *input, char *ret
                p = str;
                p2 = options;
                while (*p == ' ') p++;        
-               while (*p == *p2) {  p++;  p2++;  }
+               while (*p == *p2 && *p2) {  p++;  p2++;  }
           
                if (!*p2 && (*p==' ' || *p == '='))
                {
@@ -95,8 +100,10 @@ int FindParameters (char *block, int rank, char *options, char *input, char *ret
                   p++;
                   while(*p == ' ')  p++;
    
-                  while (*p && *p!=' ')  {  *ret = *p;  ret++;  p++;  }
-                  *ret = '\0';
+						// 전체 문자열 복사 (공백 포함)
+                  int i = 0;
+                  while (*p && *p != '\n' && *p != '\r') ret[i++] = *p++;
+                  ret[i] = '\0';
                   fclose(fp);
                   return 1;
                }

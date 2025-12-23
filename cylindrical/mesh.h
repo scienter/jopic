@@ -29,6 +29,11 @@
 #define Lifschitz	1
 #define Davidson	2
 
+#define MAXRPN 100  // Max tokens in RPN
+//#define MAX_CHAR 100  // Max charactor for string
+#define MAX_TOKENS 100
+#define MAX_STACK 100
+
 typedef struct _Domain 
 {
    int dimension;
@@ -243,6 +248,9 @@ typedef struct _Track
    double kp;
 }  Track;
 
+void infix_to_rpn(Token* infix, int infix_len, Token* rpn, int* rpn_len);
+double evaluate_rpn(Token* rpn, int rpn_len, double x, double y);
+int tokenize(const char* expr, Token* tokens);
 void cleanMemory(Domain *D);
 void tmpCleanMemory(Domain *D);
 void saveTracking(Domain *D);
@@ -282,7 +290,7 @@ void saveCenterDensity(Domain *D,int iteration);
 void saveCenterField(Domain *D,int iteration);
 double ***memoryAsign(int nx, int ny, int nz);
 void restoreIntMeta(char *fileName,char *dataName,int *data,int dataCnt);
-void solveF(Domain D);
+void solveF(Domain D,int iteration);
 void solveCharge(Domain *D,LoadList *LL,double ***rhoR,double ***rhoI,int istart,int iend,int jstart,int jend,int s,double coef);
 void movingPairCharge(Domain *D);
 void ionizationSetup(LoadList *LL,int species);

@@ -9,24 +9,24 @@ void deleteField(double ***field,int nx,int ny,int nz);
 
 void cleanMemory(Domain *D)
 {
-    Particle **particle;
-    particle=D->particle;
-    LoadList *LL,*tmpLL;
-    LaserList *L, *tmpL;
-    int i,j,istart,iend,jstart,jend,numMode;
-    int s,nxSub,nySub;
-    double *plusX;
-    void deleteField();
-    ptclList *p,*tmp;
-    int myrank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   Particle **particle;
+   particle=D->particle;
+   LoadList *LL,*tmpLL;
+   LaserList *L, *tmpL;
+   int i,j,istart,iend,jstart,jend,numMode;
+   int s,nxSub,nySub;
+   double *plusX;
+   void deleteField();
+   ptclList *p,*tmp;
+   int myrank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
  
-    istart=D->istart;   iend=D->iend;
-    jstart=D->jstart;   jend=D->jend;
-    numMode=D->numMode;
+   istart=D->istart;   iend=D->iend;
+   jstart=D->jstart;   jend=D->jend;
+   numMode=D->numMode;
 
-    //remove particles
-    for(i=0; i<iend+1; i++)
+   //remove particles
+   for(i=0; i<iend+1; i++)
       for(j=jstart-1; j<jend+1; j++)
       {
         for(s=0; s<D->nSpecies; s++)
@@ -44,40 +44,45 @@ void cleanMemory(Domain *D)
         free(particle[i][j].head);
       }
 
-    for(i=0; i<iend+1; i++) 
+   for(i=0; i<iend+1; i++) 
       free(D->particle[i]);
-    free(particle);
+   free(particle);
       
-    LL=D->loadList;
-    while(LL->next)
-    {
+   LL=D->loadList;
+   while(LL->next)
+   {
       switch (LL->type)  {
       case Polygon :
-        if(LL->ChXnodes>0)
-        {
-          free(LL->ChXpoint);	
-          free(LL->ChXn);	
-        }
-        if(LL->xnodes>0)
-        {
-          free(LL->xpoint);	
-          free(LL->xn);	
-        }
-        if(LL->ynodes>0)
-        {
-          free(LL->ypoint);
-          free(LL->yn);
-        }
-        break;
+        	if(LL->xnodes>0)
+        	{
+          	free(LL->xpoint);	
+          	free(LL->xn);
+          	for(i=0; i<LL->xnodes; i++) free(LL->rpn_x[i]);
+          	free(LL->expr_x);
+          	free(LL->rpn_size_x);
+          	free(LL->rpn_x);	
+          	free(LL->infix_x);	
+        	}
+        	if(LL->ynodes>0)
+        	{
+          	free(LL->ypoint);
+          	free(LL->yn);
+            for(i=0; i<LL->ynodes; i++) free(LL->rpn_y[i]);
+            free(LL->expr_y);
+            free(LL->rpn_size_y);
+            free(LL->rpn_y);
+            free(LL->infix_y);
+        	}
+        	break;
       case Defined :
-        if(LL->numDefined>0)
-        {
-            free(LL->xPosition);
+        	if(LL->numDefined>0)
+        	{
+         	free(LL->xPosition);
             free(LL->yPosition);
             for(i=0; i<LL->numDefined; i++)
-              free(LL->define[i]);
-        }
-        break;
+              	free(LL->define[i]);
+        	}
+        	break;
       }
 
       tmpLL=LL->next;

@@ -23,6 +23,7 @@ double randomV()
 int whatONOFF(char *str);
 int whatLaserMode(char *str);
 int whatLoadingMethod(char *str);
+int whatDirection(char *str);
 int findPlasmaLensParameters(int rank, PlasmaLens *PL,Domain *D,char *input);
 void saveIntMeta(char *fileName,char *dataName,int *data,int dataCnt);
 void saveDoubleMeta(char *fileName,char *dataName,double *data,int dataCnt);
@@ -232,7 +233,7 @@ void parameterSetting(Domain *D,External *Ext, char *input)
   //additional Domain parameters  
   D->iteration=0;
   D->dx=1.0/D->divisionLambda;
-  D->nx=((int)((D->maxX-D->minX)/D->dx));
+  D->nx=((int)((D->maxX-D->minX)/D->dx))+1;
   D->ny=1;
   D->nz=1;
   tmpDouble=D->dx/(D->gamma*(1+D->beta));
@@ -249,7 +250,7 @@ void parameterSetting(Domain *D,External *Ext, char *input)
   D->shiftStart=0;
   if(D->dimension>1)   {
     D->dy=D->dx*dyoverdx;
-    D->ny=((int)((D->maxY-D->minY)/D->dy));
+    D->ny=((int)((D->maxY-D->minY)/D->dy))+1;
   }
   else	;
   if(D->dimension>2)   {
@@ -260,7 +261,7 @@ void parameterSetting(Domain *D,External *Ext, char *input)
 //      fail=1;
 //    }
 //    else	;
-    D->nz=((int)((D->maxZ-D->minZ)/D->dz));
+    D->nz=((int)((D->maxZ-D->minZ)/D->dz))+1;
   }
   else	;  
 
@@ -486,6 +487,8 @@ int findLaserParameters(int rank, LaserList *L,Domain *D,char *input)
    if(L->loadMethod)  {
       if(FindParameters("Laser",rank,"polarity",input,str)) L->polarity=atoi(str);
 	    else  L->polarity=0;
+      if(FindParameters("Laser",rank,"direction",input,str)) L->direction=whatDirection(str);
+      else  L->direction=0;
       if(FindParameters("Laser",rank,"wavelength",input,str))  {
         L->lambda=atof(str);
         L->lambda*=D->gamma*(1.0+D->beta);
@@ -519,8 +522,6 @@ int findLaserParameters(int rank, LaserList *L,Domain *D,char *input)
         else  { printf("in [Laser], rD=? [# of basic wavelength]\n"); fail=1;  }
        if(FindParameters("Laser",rank,"flat",input,str)) L->flat=atof(str);
        else  L->flat=0.0;
-       if(FindParameters("Laser",rank,"direction",input,str)) L->direction=atoi(str);
-       else  L->direction=0;
        if(FindParameters("Laser",rank,"gdd",input,str)) L->gdd=atof(str);
        else  L->gdd=0.0;
        if(D->dimension>1) {
@@ -684,6 +685,13 @@ int findLoadParameters(int rank, LoadList *LL,Domain *D,char *input)
       {
         LL->xpoint = (double *)malloc(LL->xnodes*sizeof(double));
         LL->xn = (double *)malloc(LL->xnodes*sizeof(double));   
+        LL->expr_x = (char **)malloc(LL->xnodes*sizeof(char *));
+        LL->rpn_x = (Token **)malloc(LL->xnodes*sizeof(Token *));   
+        for(i=0; i<LL->xnodes; i++) {   
+          LL->expr_x[i] = (char *)malloc(MAX_CHAR*sizeof(char ));   
+          LL->rpn_x[i] = (Token *)malloc(MAXRPN*sizeof(Token ));
+		  }   
+        LL->rpn_size_x = (int *)malloc(LL->xnodes*sizeof(int ));   
         for(i=0; i<LL->xnodes; i++)
         {
           sprintf(name,"X%d",i);
@@ -695,8 +703,45 @@ int findLoadParameters(int rank, LoadList *LL,Domain *D,char *input)
           sprintf(name,"Xn%d",i);
           if(FindParameters("Plasma",rank,name,input,str)) 
             LL->xn[i] = atof(str);
+          else
+            LL->xn[i] = 1.0;
+
+          sprintf(name,"fx(x)_%d",i);
+          if(FindParameters("Plasma",rank,name,input,str))
+            sprintf(LL->expr_x[i],str);
           else 
-          { printf("Xn%d should be defined.\n",i);  fail=1; } 
+            LL->expr_x[i] = "1";
+
+          LL->rpn_size_x[i] = shunting_yard(LL->expr_x[i],LL->rpn_x[i]);             
+        }
+        // center shift y and z  
+        LL->expr_x_y0 = (char **)malloc(LL->xnodes*sizeof(char *));
+        LL->expr_x_z0 = (char **)malloc(LL->xnodes*sizeof(char *));
+        LL->rpn_x_y0 = (Token **)malloc(LL->xnodes*sizeof(Token *));   
+        LL->rpn_x_z0 = (Token **)malloc(LL->xnodes*sizeof(Token *));   
+        for(i=0; i<LL->xnodes; i++) {   
+          LL->expr_x_y0[i] = (char *)malloc(MAX_CHAR*sizeof(char ));   
+          LL->expr_x_z0[i] = (char *)malloc(MAX_CHAR*sizeof(char ));   
+          LL->rpn_x_y0[i] = (Token *)malloc(MAXRPN*sizeof(Token ));
+          LL->rpn_x_z0[i] = (Token *)malloc(MAXRPN*sizeof(Token ));
+		  }   
+        LL->rpn_size_x_y0 = (int *)malloc(LL->xnodes*sizeof(int ));   
+        LL->rpn_size_x_z0 = (int *)malloc(LL->xnodes*sizeof(int ));   
+        for(i=0; i<LL->xnodes; i++)
+        {
+          sprintf(name,"ycen(x)_%d",i);
+          if(FindParameters("Plasma",rank,name,input,str))
+            sprintf(LL->expr_x_y0[i],str);
+          else 
+            LL->expr_x_y0[i] = "0";
+          sprintf(name,"zcen(x)_%d",i);
+          if(FindParameters("Plasma",rank,name,input,str))
+            sprintf(LL->expr_x_z0[i],str);
+          else 
+            LL->expr_x_z0[i] = "0";
+
+          LL->rpn_size_x_y0[i] = shunting_yard(LL->expr_x_y0[i],LL->rpn_x_y0[i]);
+          LL->rpn_size_x_z0[i] = shunting_yard(LL->expr_x_z0[i],LL->rpn_x_z0[i]);
         }
       }
       if(FindParameters("Plasma",rank,"Ynodes",input,str)) LL->ynodes=atoi(str);
@@ -705,42 +750,81 @@ int findLoadParameters(int rank, LoadList *LL,Domain *D,char *input)
       else  LL->znodes=2;      
       if(D->dimension==1)   { LL->ynodes=2; LL->znodes=2; }
       if(D->dimension==2)   { LL->znodes=2; }
+
       LL->ypoint = (double *)malloc(LL->ynodes*sizeof(double));
       LL->yn = (double *)malloc(LL->ynodes*sizeof(double)); 
       LL->ypoint[0]=0; LL->ypoint[1]=1; 
       LL->yn[0]=1; LL->yn[1]=1;
+	   LL->expr_y = (char **)malloc(LL->ynodes*sizeof(char *));
+      LL->rpn_y = (Token **)malloc(LL->ynodes*sizeof(Token *));   
+		for(i=0; i<LL->ynodes; i++) {
+      	LL->expr_y[i] = (char *)malloc(MAX_CHAR*sizeof(char ));
+         LL->rpn_y[i] = (Token *)malloc(MAXRPN*sizeof(Token ));
+		}   
+      LL->rpn_size_y = (int *)malloc(LL->ynodes*sizeof(int ));
+      LL->rpn_size_y[0] = shunting_yard("1",LL->rpn_y[0]);             
+
       LL->zpoint = (double *)malloc(LL->znodes*sizeof(double));
       LL->zn = (double *)malloc(LL->znodes*sizeof(double));  
       LL->zpoint[0]=0; LL->zpoint[1]=1; 
       LL->zn[0]=1; LL->zn[1]=1;
+	   LL->expr_z = (char **)malloc(LL->znodes*sizeof(char *));
+      LL->rpn_z = (Token **)malloc(LL->znodes*sizeof(Token *));
+      for(i=0; i<LL->znodes; i++) {
+      	LL->expr_z[i] = (char *)malloc(MAX_CHAR*sizeof(char ));
+         LL->rpn_z[i] = (Token *)malloc(MAXRPN*sizeof(Token ));   
+		}
+      LL->rpn_size_z = (int *)malloc(LL->znodes*sizeof(int ));  	
+      LL->rpn_size_z[0] = shunting_yard("1",LL->rpn_z[0]);             
       
       if(D->dimension>1)  {
-        for(i=0; i<LL->ynodes; i++)
-        {
-          sprintf(name,"Y%d",i);
-          if(FindParameters("Plasma",rank,name,input,str)) {
-            LL->ypoint[i] = atof(str)/D->lambda/D->dy;
-          }
-          else 
-          { printf("Y%d should be defined.\n",i);  fail=1; }
+      	if(LL->ynodes>0)  {
+        		for(i=0; i<LL->ynodes; i++)
+        		{
+          		sprintf(name,"Y%d",i);
+          		if(FindParameters("Plasma",rank,name,input,str))
+            		LL->ypoint[i] = atof(str)/D->lambda/D->dy;
+          		else { printf("Y%d should be defined.\n",i);  fail=1; }
  
-          sprintf(name,"Yn%d",i);
-          if(FindParameters("Plasma",rank,name,input,str)) 
-            LL->yn[i] = atof(str);
-          else 
-          { printf("Yn%d should be defined.\n",i);  fail=1; } 
-        }
-      } else ;
-      if(D->dimension>2)   {
-        for(i=0; i<LL->znodes; i++)  {
-          sprintf(name,"Z%d",i);
-          if(FindParameters("Plasma",rank,name,input,str)) LL->zpoint[i] = atof(str)/D->lambda/D->dz;
-          else { printf("Z%d should be defined.\n",i);  fail=1; }
+          		sprintf(name,"Yn%d",i);
+          		if(FindParameters("Plasma",rank,name,input,str)) 
+            		LL->yn[i] = atof(str);
+          		else 
+            		LL->yn[i] = 1;
 
-          sprintf(name,"Zn%d",i);
-          if(FindParameters("Plasma",rank,name,input,str)) LL->zn[i] = atof(str);
-          else { printf("Zn%d should be defined.\n",i);  fail=1; } 
-        }
+          		sprintf(name,"fy(x)_%d",i);
+          		if(FindParameters("Plasma",rank,name,input,str))
+            		sprintf(LL->expr_y[i],str);
+          		else 
+            		LL->expr_y[i] = "1";
+
+          		LL->rpn_size_y[i] = shunting_yard(LL->expr_y[i],LL->rpn_y[i]);             
+        		}
+      	} else ;
+		}
+      if(D->dimension>2)   {
+      	if(LL->znodes>0)  {
+				for(i=0; i<LL->znodes; i++)  {
+          		sprintf(name,"Z%d",i);
+          		if(FindParameters("Plasma",rank,name,input,str)) 
+ 						LL->zpoint[i] = atof(str)/D->lambda/D->dz;
+          		else { printf("Z%d should be defined.\n",i);  fail=1; }
+
+          		sprintf(name,"Zn%d",i);
+          		if(FindParameters("Plasma",rank,name,input,str)) 
+						LL->zn[i] = atof(str);
+          		else
+						LL->zn[i] = 1;
+
+          		sprintf(name,"fz(x)_%d",i);
+          		if(FindParameters("Plasma",rank,name,input,str))
+            		sprintf(LL->expr_z[i],str);
+          		else 
+            		LL->expr_z[i] = "1";
+
+          		LL->rpn_size_z[i] = shunting_yard(LL->expr_z[i],LL->rpn_z[i]);             
+       		}
+			} else ;	
       }
       if(FindParameters("Plasma",rank,"centerX",input,str))  LL->centerX=atof(str)/D->lambda/D->dx;
       else   LL->centerX=0.0;	
@@ -1266,4 +1350,11 @@ int whatLoadingMethod(char *str)
   else           		   				return NoLaser;
 }
 
+int whatDirection(char *str)
+{
+  if(strstr(str,"Right"))       	return RIGHT;
+  else if(strstr(str,"Left"))      	return LEFT;
+  else if(strstr(str,"Both"))      	return BOTH;
+  else        				return NoDirection;
+}
 

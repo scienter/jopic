@@ -37,7 +37,6 @@
 #define Polygon    	1
 #define Defined    	2
 #define Beam	    	3
-#define Channel    	4
 #define BoostFrame	5
 #define Circle    	6
 #define Exp    		7
@@ -49,6 +48,28 @@
 #define byNumber	0
 #define byDensity	1
 
+typedef enum {
+    TOK_NUM,      // 숫자 (항상 양수 double)
+    TOK_VAR,
+    TOK_OP_BINARY,
+    TOK_OP_UNARY, // 단항 + 또는 -
+    TOK_FUNC,
+    TOK_LPAREN,
+    TOK_RPAREN
+} TokenType;
+
+
+
+typedef struct {
+   TokenType type;
+   union {
+      double num;
+      char var;       // 'x' or 'y'
+      char op;
+      char func[4];   // "sin", "cos", "exp"
+   } value;
+} Token;
+
 typedef struct _LoadList  {
    int type;
    int species;
@@ -59,19 +80,15 @@ typedef struct _LoadList  {
    double criticalDensity;
    double targetW;
    double num;      //exceeded number of particle which is less than 1
-   int xnodes;     //longitudinal point number
-   double *xn;      //longitudinal density (1 is P->density)
-   double *xpoint;    //longitudinal point
-   int ynodes;     //transverse point number
-   double *yn;      //transverse density (1 is P->density)
-   double *ypoint;    //transverse point
-   int znodes;     //transverse point number
-   double *zn;      //transverse density (1 is P->density)
-   double *zpoint;    //transverse point
-   double givenMinPx;	//for saveParticle option
-   int ChXnodes;     //longitudinal point number for chaanel
-   double *ChXn;      //longitudinal coef. value for channel
-   double *ChXpoint;    //longitudinal point for channel
+   int xnodes, ynodes, znodes;     //longitudinal, transverse point number
+   double *xn, *yn, *zn;      //longitudinal, transverse density (1 is P->density)
+   double *xpoint, *ypoint, *zpoint;    //longitudinal, transverse point
+   //shunt_yard
+   char **expr_x, **expr_y, **expr_z;   // function_XYZ
+  	Token **rpn_x, **rpn_y, **rpn_z;
+  	Token **infix_x, **infix_y, **infix_z;
+	int *rpn_size_x, *rpn_size_y, *rpn_size_z;
+	double givenMinPx;	//for saveParticle option
 
    //initial momentum distribution
    double z0,pz0;
@@ -105,9 +122,6 @@ typedef struct _LoadList  {
    
    double temperature;
    
-   //channel
-   double channelCoef;
-
    //ionization
    int levels;
    int ionFinal;

@@ -170,8 +170,8 @@ void movingDomain_Cylind(Domain *D,int iteration)
             D->JrI[m][i][j]=D->JrI[m][i+1][j];
             D->JpR[m][i][j]=D->JpR[m][i+1][j];
             D->JpI[m][i][j]=D->JpI[m][i+1][j];
-            D->RhoNoPairR[m][i][j]=D->RhoNoPairR[m][i+1][j];
-            D->RhoNoPairI[m][i][j]=D->RhoNoPairI[m][i+1][j];
+            //D->RhoNoPairR[m][i][j]=D->RhoNoPairR[m][i+1][j];
+            //D->RhoNoPairI[m][i][j]=D->RhoNoPairI[m][i+1][j];
             D->RhoPairR[m][i][j]=D->RhoPairR[m][i+1][j];
             D->RhoPairI[m][i][j]=D->RhoPairI[m][i+1][j];
             D->FR[m][i][j]=D->FR[m][i+1][j];

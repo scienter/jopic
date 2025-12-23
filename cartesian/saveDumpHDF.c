@@ -1114,8 +1114,8 @@ void saveFieldComp(double ***data,char *fileName,char *dataName,int nx,int ny,in
         } 
 
     plist_id=H5Pcreate(H5P_DATASET_XFER);
-//    H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_COLLECTIVE);
-    H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_INDEPENDENT);
+    H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_COLLECTIVE);
+//    H5Pset_dxpl_mpio(plist_id,H5FD_MPIO_INDEPENDENT);
     status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE,memspace,subfilespace,plist_id,field);
 	 
     H5Pclose(plist_id);

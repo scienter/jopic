@@ -6,6 +6,7 @@
 #include <complex.h>
 #include "mpi.h"
 
+void shotLaser_Gaussian_1D(Domain *D,LaserList *L);
 void shotLaser_Gaussian_2D(Domain *D,LaserList *L);
 void shotLaser_SSTF_2D(Domain *D,LaserList *L);
 void shotLaser_Gaussian_3D(Domain *D,LaserList *L);
@@ -16,6 +17,8 @@ void shotLaser(Domain *D,LaserList *L)
 {
     switch((D->fieldType-1)*3+D->dimension)  {
     case (Split-1)*3+1 :
+      if(L->mode==Gaussian) shotLaser_Gaussian_1D(D,L);
+      else ;
     case (Yee-1)*3+1 :
     case (Pukhov-1)*3+1 :
       break;
@@ -37,6 +40,98 @@ void shotLaser(Domain *D,LaserList *L)
       printf("In shotLaser, what is field_type? and what is dimension?\n");
     }
 }
+
+void shotLaser_Gaussian_1D(Domain *D,LaserList *L)
+{
+   double rU,rD,t0,flat,x1,x2,factR,factL;
+   double zR,w0,w,phi,omega,kx,pphi,amp,focus,a0;
+   double x,y,z,r2,w2,retard,positionX,dx,dy,dt,dtOverdy;
+   double ***field1,***field2;	
+   int istart,iend,jstart,jend,kstart,kend,minj,maxj;
+   int rank,i,j,k,jC,kC,minXSub,minYSub;
+   int myrank, nTasks;
+
+   MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+   MPI_Comm_size(MPI_COMM_WORLD, &nTasks);
+
+   istart=D->istart;   iend=D->iend;
+   jstart=D->jstart;   jend=D->jend;  j=0;
+   kstart=D->kstart;   kend=D->kend;  k=0;
+   minXSub=D->minXSub; minYSub=D->minYSub;
+   dx=D->dx;           dy=D->dy; dt=D->dt;
+
+   rU=L->rU*L->lambda/D->lambda;  //D->lambda;
+   rD=L->rD*L->lambda/D->lambda; //*D->lambda;
+   flat=L->flat*L->lambda/D->lambda;
+   retard=L->retard*L->lambda/D->lambda;
+
+   a0=L->amplitude;
+   focus=L->focus;
+   zR=L->rayleighLength;	//normalized
+   w0=L->beamWaist;  		//normalized
+   positionX=L->loadPointX*D->dx;
+   x1=positionX-flat*0.5-retard;
+   x2=positionX+flat*0.5-retard;
+   kx=2.0*M_PI/L->lambda*D->lambda;
+
+   factR=1.0; factL=1.0;
+   if(L->polarity==2) {
+     switch(D->fieldType)  {
+     case Split:
+       field1=D->Pr; field2=D->Pl;
+       if(L->direction==RIGHT) { factR=1.0; factL=0.0; }
+       else if(L->direction==LEFT) { factR=0.0; factL=1.0; }
+       else if(L->direction==BOTH) { factR=1.0; factL=1.0; }
+       else { factR=0.0; factL=0.0; }       
+       break;
+     case Yee:
+     case Pukhov:
+       field1=D->Ey; field2=D->Bz;
+       break;
+     }
+   } else if(L->polarity==3) {
+     switch(D->fieldType)  {
+     case Split:
+       field1=D->Sr; field2=D->Sl;
+       if(L->direction==RIGHT) { factR=1.0; factL=0.0; }
+       else if(L->direction==LEFT) { factR=0.0; factL=1.0; }
+       else if(L->direction==BOTH) { factR=1.0; factL=1.0; }
+       else { factR=0.0; factL=0.0; }
+       break;
+     case Yee:
+     case Pukhov:
+       field1=D->Ez; field2=D->By;
+       break;
+     }
+   } else ;
+
+   switch (L->add)  {
+   case OFF :
+     for(i=1; i<iend+2; i++)  {
+       x=(minXSub+i)*dx+retard;
+       if(x<=x1)      amp=exp(-(x-positionX)*(x-positionX)/rU/rU)*a0*sin(kx*x);
+       else if(x>x1 && x<=x2) amp=a0*sin(kx*x);
+       else if(x>x2)  amp=exp(-(x-positionX)*(x-positionX)/rD/rD)*a0*sin(kx*x);
+       field1[i][j][k]=amp*factR;
+       field2[i][j][k]=amp*factL;
+     }
+     break;
+   case ON :
+     for(i=1; i<iend+3; i++)  {
+       x=(minXSub+i)*dx+retard;
+       if(x<=x1)      amp=exp(-(x-positionX)*(x-positionX)/rU/rU)*a0*sin(kx*x);
+       else if(x>x1 && x<=x2) amp=a0*sin(kx*x);
+       else if(x>x2)  amp=exp(-(x-positionX)*(x-positionX)/rD/rD)*a0*sin(kx*x);
+       field1[i][j][k]+=amp*factR; 
+       field2[i][j][k]+=amp*factL;
+     }
+     break; 
+   default :
+     printf("In shotLaser.c, what laser mode?\n");
+     break;
+   }		//End of switch
+}
+
 
 void shotLaser_Gaussian_2D(Domain *D,LaserList *L)
 {

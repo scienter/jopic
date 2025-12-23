@@ -30,7 +30,8 @@ void loadLaser(Domain *D,LaserList *L,double t)
 	else laserDur=0.0;
 
 
-  if(D->boostOn==OFF && t<D->nx*D->dt)
+  //if(D->boostOn==OFF && t<D->nx*D->dt)
+  if(D->boostOn==OFF && t<laserDur*D->dt)
   {
     switch((D->fieldType-1)*3+D->dimension)  {
     case (Split-1)*3+1 :
@@ -167,7 +168,7 @@ void loadLaser1D_Yee_Pukhov(Domain *D,LaserList *L,double t)
 
 void loadLaser1D_Split(Domain *D,LaserList *L,double t)
 {
-   double rU,rD,longitudinal,t0,flat,omega,amp;
+   double rU,rD,longitudinal,t0,flat,omega,amp,factR,factL;
    int istart,iend,positionX,j,k,laserOK=0;
    int myrank, nTasks;
 
@@ -199,18 +200,23 @@ void loadLaser1D_Split(Domain *D,LaserList *L,double t)
    else ;
    positionX=L->loadPointX+istart-D->minXSub;
 
+   if(L->direction==RIGHT) { factR=1.0; factL=0.0; }
+   else if(L->direction==LEFT) { factR=0.0; factL=1.0; }
+   else if(L->direction==BOTH) { factR=1.0; factL=1.0; }
+   else { factR=0.0; factL=0.0; }
+
    if(laserOK==ON)   {
      switch (L->add)  {
      case OFF :
        j=k=0;
        if(L->polarity==2)     {
          amp=longitudinal*sin(omega*t);
-         D->Pr[positionX][j][k]=amp;            
-         D->Pl[positionX][j][k]=amp;           
+         D->Pr[positionX][j][k]=amp*factR;            
+         D->Pl[positionX][j][k]=amp*factL;           
        } else if(L->polarity==3)   {
          amp=longitudinal*sin(omega*t);
-         D->Sr[positionX][j][k]=amp;            
-         D->Sl[positionX][j][k]=amp;           
+         D->Sr[positionX][j][k]=amp*factR;            
+         D->Sl[positionX][j][k]=amp*factL;           
        } else ;
        break;
 
@@ -218,12 +224,12 @@ void loadLaser1D_Split(Domain *D,LaserList *L,double t)
        j=k=0;
        if(L->polarity==2)     {
          amp=longitudinal*sin(omega*t);
-         D->Pr[positionX][j][k]+=amp;            
-         D->Pl[positionX][j][k]+=amp;           
+         D->Pr[positionX][j][k]+=amp*factR;            
+         D->Pl[positionX][j][k]+=amp*factL;           
        } else if(L->polarity==3)   {
          amp=longitudinal*sin(omega*t);
-         D->Sr[positionX][j][k]+=amp;            
-         D->Sl[positionX][j][k]+=amp;           
+         D->Sr[positionX][j][k]+=amp*factR;            
+         D->Sl[positionX][j][k]+=amp*factL;           
        } else ;
        break;
      }
