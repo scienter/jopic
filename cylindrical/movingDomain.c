@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "mesh.h"
 #include "mpi.h"
+#include <string.h>
 
 void movingDomain_Cylind(Domain *D,int iteration);
 void movingPML_Left(Domain *D,PML ***lpml,int left);
@@ -145,6 +146,7 @@ void movingDomain_Cylind(Domain *D,int iteration)
 //      } else ;
       break;
     case Split :
+      /*
       for(m=0; m<numMode; m++)
         for(i=0; i<iend+2; i++)
           for(j=0; j<jend+3; j++)  {
@@ -176,7 +178,39 @@ void movingDomain_Cylind(Domain *D,int iteration)
             D->RhoPairI[m][i][j]=D->RhoPairI[m][i+1][j];
             D->FR[m][i][j]=D->FR[m][i+1][j];
             D->FI[m][i][j]=D->FI[m][i+1][j];
-          }   
+          }
+      */ 
+      size_t count = (iend + 2)*(jend+3) * sizeof(double);  // 복사할 바이트 수  
+      for(m=0; m<numMode; m++) {
+        memmove(D->EzR[m][0],     D->EzR[m][1],     count);
+        memmove(D->EzI[m][0],     D->EzI[m][1],     count);
+        memmove(D->BzR[m][0],     D->BzR[m][1],     count);
+        memmove(D->BzI[m][0],     D->BzI[m][1],     count);
+        memmove(D->PrR[m][0],     D->PrR[m][1],     count);
+        memmove(D->PrI[m][0],     D->PrI[m][1],     count);
+        memmove(D->PlR[m][0],     D->PlR[m][1],     count);
+        memmove(D->PlI[m][0],     D->PlI[m][1],     count);
+        memmove(D->SrR[m][0],     D->SrR[m][1],     count);
+        memmove(D->SrI[m][0],     D->SrI[m][1],     count);
+        memmove(D->SlR[m][0],     D->SlR[m][1],     count);
+        memmove(D->SlI[m][0],     D->SlI[m][1],     count);
+        memmove(D->EzNowR[m][0],     D->EzNowR[m][1],     count);
+        memmove(D->EzNowI[m][0],     D->EzNowI[m][1],     count);
+        memmove(D->BzNowR[m][0],     D->BzNowR[m][1],     count);
+        memmove(D->BzNowI[m][0],     D->BzNowI[m][1],     count);
+        memmove(D->JzR[m][0],     D->JzR[m][1],     count);
+        memmove(D->JzI[m][0],     D->JzI[m][1],     count);
+        memmove(D->JrR[m][0],     D->JrR[m][1],     count);
+        memmove(D->JrI[m][0],     D->JrI[m][1],     count);
+        memmove(D->JpR[m][0],     D->JpR[m][1],     count);
+        memmove(D->JpI[m][0],     D->JpI[m][1],     count);
+            //D->RhoNoPairR[m][i][j]=D->RhoNoPairR[m][i+1][j];
+            //D->RhoNoPairI[m][i][j]=D->RhoNoPairI[m][i+1][j];
+        memmove(D->RhoPairR[m][0],     D->RhoPairR[m][1],     count);
+        memmove(D->RhoPairI[m][0],     D->RhoPairI[m][1],     count);
+        memmove(D->FR[m][0],     D->FR[m][1],     count);
+        memmove(D->FI[m][0],     D->FI[m][1],     count);
+      }   
 //      if(D->pmlUp==ON) {
 //        for(m=0; m<numMode; m++)
 //          for(i=istart-1; i<iend+1; i++) {

@@ -331,73 +331,79 @@ void checkEnergyCons(Domain *D,int iteration,double *sumB,double *sumBz,double *
 
 void saveDensityProfile(Domain *D)
 {
-	int i,j,NUM=100,numX;
-	double MIN=1e7,MAX=-1e7,minX,maxX,x,dx,posX,ne;
-	double *density,*dataX;
-	FILE *out;
-	LoadList *LL;
+   int i,j,NUM=1000,numX;
+   double MIN=1e7,MAX=-1e7,minX,maxX,x,dx,posX,posY,neX,neFuncX;
+   double realDz,realDr;
+   double *density,*dataX;
+   FILE *out;
+   LoadList *LL;
 
-	minX=MIN; maxX=MAX;
-	LL=D->loadList;
-	while(LL->next)      {
-		switch (LL->type) {
-		case Polygon :
-			if(LL->xnodes>0) {
-				for(i=0; i<LL->xnodes; i++) {
-					x=LL->xpoint[i];
-					if(x<minX)	minX=x;	else;
-					if(x>maxX)	maxX=x;	else;
-				}
-			}	else ;
-			break;
-		}
-		LL=LL->next;
-	}
+   minX=MIN; maxX=MAX;
+   realDz=D->dz*D->lambda;
+   realDr=D->dr*D->lambda;
 
-	if(maxX==MAX || minX==MIN)	{
-		maxX=0.0;
-		minX=0.0;
-	}	else ;
+   LL=D->loadList;
+   while(LL->next)      {
+      switch (LL->type) {
+         case Polygon :
+            if(LL->xnodes>0) {
+               for(i=0; i<LL->xnodes; i++) {
+                  x=LL->xpoint[i];
+                     if(x<minX)	minX=x;	else;
+                     if(x>maxX)	maxX=x;	else;
+               }
+            }	else ;
+         break;
+      }
+      LL=LL->next;
+   }
 
-	numX=NUM;
-	dx=(maxX-minX)/(1.0*numX);
-	dataX=(double *)malloc((numX+1)*sizeof(double ));
-	density=(double *)malloc((numX+1)*sizeof(double ));
-	for(i=0; i<=numX; i++)	{
-		dataX[i]=minX+i*dx;
-		density[i]=0.0;
-	}
+   if(maxX==MAX || minX==MIN)	{
+      maxX=0.0;
+      minX=0.0;
+   }	else ;
 
-	for(j=0; j<=numX; j++) {
-		posX=dataX[j];
+   numX=NUM;
+   dx=(maxX-minX)/(1.0*numX);
+   dataX=(double *)malloc((numX+1)*sizeof(double ));
+   density=(double *)malloc((numX+1)*sizeof(double ));
+   for(i=0; i<=numX; i++)	{
+      dataX[i]=minX+i*dx;
+      density[i]=0.0;
+   }
 
-		LL=D->loadList;
-		while(LL->next)	{
-			switch (LL->type)	{
-			case Polygon :
-				if(LL->xnodes>0) {			
-					for(i=0; i<LL->xnodes-1; i++) {
-		         	if(posX>=LL->xpoint[i] && posX<LL->xpoint[i+1]) {
-							ne=((LL->xn[i+1]-LL->xn[i])/(LL->xpoint[i+1]-LL->xpoint[i])*(posX-LL->xpoint[i])+LL->xn[i]);
-							density[j]+=ne*LL->density;
-							i=LL->xnodes;
-						}	else ;
-					}
-				}	else ;
-				break;
-			}
-			LL=LL->next;
-		}
-	}
+   posY=0.0;
+   for(j=0; j<=numX; j++) {
+      posX=dataX[j];
 
-	out=fopen("densityProfile","w");
-	for(i=0; i<=numX; i++) 
-		fprintf(out,"%g %g\n",dataX[i]*D->lambda*D->dz,density[i]);
-	fclose(out);
-	printf("\n\ndensityProfile is made.\n\n");
+      LL=D->loadList;
+      while(LL->next)	{
+         switch (LL->type)	{
+         case Polygon :
+            if(LL->xnodes>0) {			
+               for(i=0; i<LL->xnodes-1; i++) {
+                  if(posX>=LL->xpoint[i] && posX<LL->xpoint[i+1]) {
+                     neX=((LL->xn[i+1]-LL->xn[i])/(LL->xpoint[i+1]-LL->xpoint[i])*(posX-LL->xpoint[i])+LL->xn[i]);
+                     neFuncX=evaluate_rpn(LL->rpn_x[i],LL->rpn_size_x[i],posX*realDz,posY*realDr);
+                     density[j]+=neX*neFuncX*LL->density;
+			            i=LL->xnodes;
+                  }	else ;
+               }
+            }	else ;
+            break;
+         }
+         LL=LL->next;
+      }
+   }
 
-	free(dataX);
-	free(density);
+   out=fopen("densityProfile","w");
+   for(i=0; i<=numX; i++) 
+      fprintf(out,"%g %g\n",dataX[i]*D->lambda*D->dz,density[i]);
+   fclose(out);
+   printf("\n\ndensityProfile is made.\n\n");
+
+   free(dataX);
+   free(density);
 }
 
 

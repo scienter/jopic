@@ -29,10 +29,10 @@
 #define Lifschitz	1
 #define Davidson	2
 
-#define MAXRPN 100  // Max tokens in RPN
-//#define MAX_CHAR 100  // Max charactor for string
-#define MAX_TOKENS 100
-#define MAX_STACK 100
+#define MAXRPN 1000  // Max tokens in RPN
+//#define MAX_CHAR 1000  // Max charactor for string
+#define MAX_TOKENS 1000
+#define MAX_STACK 1000
 
 typedef struct _Domain 
 {

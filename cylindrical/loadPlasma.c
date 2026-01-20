@@ -101,26 +101,17 @@ void loadPolygonPlasma(Domain *D,LoadList *LL,int s,int iteration,int istart,int
    //position define      
    for(i=istart; i<iend; i++)  
    {
-<<<<<<< HEAD
-     posX=(double)(i+D->minXSub-istart);
-     for(l=0; l<LL->ChXnodes-1; l++) {
-       if(posX>=LL->ChXpoint[l] && posX<LL->ChXpoint[l+1])  
-         ChCoef=((LL->ChXn[l+1]-LL->ChXn[l])/(LL->ChXpoint[l+1]-LL->ChXpoint[l])*(posX-LL->ChXpoint[l])+LL->ChXn[l]);
-       else ChCoef=0.0;
-     }
-=======
      	posX=(double)(i+D->minXSub-istart);
      	for(j=jstart; j<jend; j++)
      	{
          posY=(double)(j-jstart);
->>>>>>> 266a56c (f(x,y))
 
          neX=neFuncX=0.0;
          for(l=0; l<LL->xnodes-1; l++) {
             if(posX>=LL->xpoint[l] && posX<LL->xpoint[l+1]) {
          	   neX=((LL->xn[l+1]-LL->xn[l])/(LL->xpoint[l+1]-LL->xpoint[l])*(posX-LL->xpoint[l])+LL->xn[l]);
                neFuncX=evaluate_rpn(LL->rpn_x[l],LL->rpn_size_x[l],posX*realDz,posY*realDr);
-               if(neFuncX<1 && posX*realDz>20e-6) {
+               if(neFuncX<0 || isnan(neFuncX)) {
                  printf("(%d,%d)=(%g,%g), neX=%g, neY=%g, neFuncX=%g\n",i,j,posX*realDz,posY*realDr,neX,neFuncX);
                  exit(0);
                }
